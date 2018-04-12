@@ -1,12 +1,10 @@
 #include "SafeSocket.h"
-#include "Logger.h"
 
-SafeSocket::SafeSocket(zmq::context_t &context, zmq::socket_type type) : SafeSocket(context, type, std::string("")) {
+SafeSocket::SafeSocket(zmq::context_t &context, zmq::socket_type type, int linger) : SafeSocket(context, type, std::string(""), linger) {
 
 }
 
-SafeSocket::SafeSocket(zmq::context_t &context, zmq::socket_type type, const std::string &identity) : socket(context, type), mutex() {
-    int linger = 0;
+SafeSocket::SafeSocket(zmq::context_t &context, zmq::socket_type type, const std::string &identity, int linger) : socket(context, type), mutex() {
     if (!identity.empty()) {
         this->socket.setsockopt(ZMQ_IDENTITY, identity.c_str(), identity.length());
     }
@@ -22,32 +20,26 @@ void SafeSocket::unlock() {
 }
 
 std::string SafeSocket::receive() {
-    this->lock();
+    std::lock_guard<std::mutex> guard(this->mutex);
     std::string message = this->receiveUnsafe();
-    this->unlock();
     return message;
 
 }
 
 bool SafeSocket::send(const std::string &string) {
-    this->lock();
-
+    std::lock_guard<std::mutex> guard(this->mutex);
     bool result = this->sendUnsafe(string);
-
-    this->unlock();
     return result;
 }
 
 void SafeSocket::bind(const std::string &address) {
-    this->lock();
+    std::lock_guard<std::mutex> guard(this->mutex);
     this->socket.bind(address.c_str());
-    this->unlock();
 }
 
 void SafeSocket::connect(const std::string &address) {
-    this->lock();
+    std::lock_guard<std::mutex> guard(this->mutex);
     this->socket.connect(address.c_str());
-    this->unlock();
 }
 
 bool SafeSocket::sendUnsafe(const std::string &string) {

@@ -36,6 +36,12 @@ private:
     SafeSocket *findPeerSocket(const std::string &name);
 
     void receiverLoop();
+
+    void createInSocket(zmq::context_t &context, std::string address);
+
+    void createOutSockets(zmq::context_t &context, const std::string &identity, const std::map<std::string, std::string> &peers);
+
+    void logSent(const std::string &name, bool result);
 };
 
 

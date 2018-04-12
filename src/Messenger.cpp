@@ -1,16 +1,26 @@
 #include "Messenger.h"
 
 Messenger::Messenger(zmq::context_t &context, std::pair<std::string, std::string> &selfConfig, std::map<std::string, std::string> &peers) {
-    this->inSocket = new SafeSocket(context, zmq::socket_type::router);
-    selfConfig.second = std::regex_replace(selfConfig.second, std::regex(R"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"), "*");
-    this->inSocket->bind(selfConfig.second);
-    LoggerSingleton::getInstance()->log("Bound inSocket to " + selfConfig.second);
+    this->createInSocket(context, selfConfig.second);
+    this->createOutSockets(context, selfConfig.first, peers);
+}
+
+void Messenger::createOutSockets(zmq::context_t &context, const std::string &identity, const std::map<std::string, std::string> &peers) {
     for (auto &&peer : peers) {
-        auto *socket = new SafeSocket(context, zmq::socket_type::dealer, selfConfig.first);
+        auto *socket = new SafeSocket(context, zmq::socket_type::dealer, identity);
         socket->connect(peer.second);
-        LoggerSingleton::getInstance()->log("Connected outSocket to " + peer.second);
         this->outSockets.insert(std::pair<std::string, SafeSocket *>(peer.first, socket));
+
+        LoggerSingleton::getInstance()->log("Connected outSocket to " + peer.second);
     }
+}
+
+void Messenger::createInSocket(zmq::context_t &context, std::string address) {
+    inSocket = new SafeSocket(context, zmq::socket_type::router);
+    address = regex_replace(address, std::regex(R"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"), "*");
+    inSocket->bind(address);
+
+    LoggerSingleton::getInstance()->log("Bound inSocket to " + address);
 }
 
 Messenger::~Messenger() {
@@ -23,8 +33,17 @@ Messenger::~Messenger() {
 
 bool Messenger::send(const std::string &name, const std::string &string) {
     SafeSocket *socket = this->findPeerSocket(name);
-    LoggerSingleton::getInstance()->log("Sending to " + name);
-    return socket->send(string);
+    bool result = socket->send(string);
+    this->logSent(name, result);
+    return result;
+}
+
+void Messenger::logSent(const std::string &name, bool result) {
+    if (result) {
+        LoggerSingleton::getInstance()->log("Sent to " + name);
+    } else {
+        LoggerSingleton::getInstance()->log("Error while sending to " + name);
+    }
 }
 
 std::string Messenger::receive() {
@@ -45,8 +64,8 @@ bool Messenger::sendBroadcast(const std::string &string) {
         socket.second->lock();
     }
     for (auto &&socket : this->outSockets) {
-        LoggerSingleton::getInstance()->log("Sending to " + socket.first);
         result = socket.second->sendUnsafe(string) && result;
+        this->logSent(socket.first, result);
     }
     for (auto &&socket : this->outSockets) {
         socket.second->unlock();

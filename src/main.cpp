@@ -27,11 +27,10 @@ int main(int argc, char *argv[]) {
             Messenger m(context, selfConfig, peers);
             m.listen();
             auto test = std::string("test");
-            std::cout << m.sendBroadcast(test) << std::endl;
+            m.sendBroadcast(test);
             test = "kill";
-            std::cout << m.sendBroadcast(test) << std::endl;
+            m.sendBroadcast(test);
         } else {
-            peers.erase("alpha");
             Messenger m(context, selfConfig, peers);
             m.listen();
         }

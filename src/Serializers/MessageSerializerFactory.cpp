@@ -6,10 +6,12 @@ std::unique_ptr<MessageSerializer> MessageSerializerFactory::createSerializer(Me
             return std::make_unique<EnvelopeSerializer>();
         case STRING:
             return std::make_unique<StringMessageSerializer>();
+        case PRIVILEGE:
+            return std::make_unique<PrivilegeMessageSerializer>();
         case REQUEST:
         case REPLY:
-        case PRIVILEGE:
         case SIGNAL:
+        case POISON:
         default:
             throw std::logic_error("Unknown message type" + type);
     }

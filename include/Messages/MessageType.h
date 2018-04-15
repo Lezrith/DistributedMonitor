@@ -7,7 +7,8 @@ enum MessageType {
     REQUEST,
     REPLY,
     PRIVILEGE,
-    SIGNAL
+    SIGNAL,
+    POISON
 };
 
 #endif //DISTRIBUTEDMONITOR_MESSAGETYPE_H

@@ -9,6 +9,7 @@
 #include <map>
 #include <thread>
 #include <regex>
+#include "Utils/CallbackRepository.h"
 #include "Messages/Message.h"
 #include "Serializers/MessageSerializerFactory.h"
 #include "SafeSocket.h"
@@ -38,11 +39,15 @@ public:
 
     const std::string &getIdentity() const;
 
+    CallbackWrapper<Envelope> registerCallback(MessageType type, const std::function<void(const Envelope &)> &callback);
+
+    void unregisterCallback(const CallbackWrapper<Envelope> &callback);
 private:
     std::thread *receiverThread = nullptr;
     SafeSocket *inSocket;
     std::map<std::string, SafeSocket *> outSockets;
     std::string identity;
+    CallbackRepository<MessageType, Envelope> callbackRepository;
 
     SafeSocket *findPeerSocket(const std::string &name);
 
@@ -53,6 +58,8 @@ private:
     void createOutSockets(zmq::context_t &context, const std::string &identity, const std::map<std::string, std::string> &peers);
 
     void logSent(const std::string &name, bool result);
+
+    void notifySubscribers(const Envelope &envelope);
 };
 
 

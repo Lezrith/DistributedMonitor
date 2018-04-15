@@ -94,12 +94,10 @@ void Messenger::joinReceiver() {
 void Messenger::receiverLoop() {
     bool shouldStop = false;
     while (!shouldStop) {
-        std::string from = this->receiveString();
-        std::string message = this->receiveString();
-        if (message == "kill") {
-            shouldStop = true;
-        }
-        LoggerSingleton::getInstance()->log(message.append(" from ").append(from));
+        auto envelope = this->receive();
+
+        shouldStop = envelope->getPayloadType() == MessageType::POISON;
+        //LoggerSingleton::getInstance()->log(message.append(" from ").append(from));
     }
 }
 
@@ -128,10 +126,26 @@ std::unique_ptr<Envelope> Messenger::receive() {
     auto envelope = std::unique_ptr<Envelope>(dynamic_cast<Envelope *>(message.release()));
     envelope->setSender(sender);
     LoggerSingleton::getInstance()->log(serializedEnvelope.append(" from ").append(sender));
+    this->notifySubscribers(*envelope);
 
     return envelope;
 }
 
 const std::string &Messenger::getIdentity() const {
     return this->identity;
+}
+
+CallbackWrapper<Envelope> Messenger::registerCallback(MessageType type, const std::function<void(const Envelope &)> &callback) {
+    return this->callbackRepository.registerCallback(type, callback);
+}
+
+void Messenger::unregisterCallback(const CallbackWrapper<Envelope> &callback) {
+    this->callbackRepository.unregisterCallback(callback);
+}
+
+void Messenger::notifySubscribers(const Envelope &envelope) {
+    auto callbacks = this->callbackRepository.getCallbacks(envelope.getPayloadType());
+    for (auto &&callback : callbacks) {
+        callback(envelope);
+    }
 }

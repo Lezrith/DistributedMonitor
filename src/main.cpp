@@ -46,8 +46,7 @@ int main(int argc, char *argv[]) {
             //m.send("alpha", envelope2);
         } else {
             Messenger m(context, selfConfig, peers);
-            auto e = m.receive();
-            std::cout << (dynamic_cast<const PrivilegeMessage *>(e->getPayload()))->getmutexUUID() << std::endl;
+            m.registerCallback(MessageType::PRIVILEGE, [](const Envelope &envelope) { std::cout << envelope.getSender() << " " << envelope.getType() << std::endl; });
             m.listen();
         }
     } catch (const std::exception &ex) {

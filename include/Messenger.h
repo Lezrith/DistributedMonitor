@@ -28,16 +28,21 @@ public:
 
     bool sendBroadcast(const Envelope &envelope);
 
-    std::string receive();
+    std::string receiveString();
+
+    std::unique_ptr<Envelope> receive();
 
     void listen();
 
     void joinReceiver();
 
+    const std::string &getIdentity() const;
+
 private:
     std::thread *receiverThread = nullptr;
     SafeSocket *inSocket;
     std::map<std::string, SafeSocket *> outSockets;
+    std::string identity;
 
     SafeSocket *findPeerSocket(const std::string &name);
 

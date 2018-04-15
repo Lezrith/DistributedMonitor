@@ -8,15 +8,20 @@
 
 class Envelope : public Message {
 public:
-    explicit Envelope(Message *message);
+    explicit Envelope(std::unique_ptr<Message> message);
 
     MessageType getPayloadType() const;
 
     const Message *getPayload() const;
 
+    const std::string &getSender() const;
+
+    void setSender(const std::string &sender);
+
 private:
-    Message *payload;
+    std::unique_ptr<Message> payload;
     MessageType payloadType;
+    std::string sender;
 };
 
 

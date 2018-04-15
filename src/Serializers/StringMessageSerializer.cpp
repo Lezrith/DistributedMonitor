@@ -5,7 +5,6 @@ std::string StringMessageSerializer::serialize(const Message &message) {
     return stringMessage.getText();
 }
 
-Message StringMessageSerializer::deserialize(const std::string &string) {
-    auto message = StringMessage(string);
-    return dynamic_cast<Message &>(message);
+std::unique_ptr<Message> StringMessageSerializer::deserialize(const std::string &string) {
+    return std::make_unique<StringMessage>(string);
 }

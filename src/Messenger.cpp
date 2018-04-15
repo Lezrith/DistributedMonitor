@@ -1,7 +1,7 @@
 #include <Messages/Envelope.h>
 #include "Messenger.h"
 
-Messenger::Messenger(zmq::context_t &context, std::pair<std::string, std::string> &selfConfig, std::map<std::string, std::string> &peers) {
+Messenger::Messenger(zmq::context_t &context, std::pair<std::string, std::string> &selfConfig, std::map<std::string, std::string> &peers) : identity(selfConfig.first) {
     this->createInSocket(context, selfConfig.second);
     this->createOutSockets(context, selfConfig.first, peers);
 }
@@ -47,7 +47,7 @@ void Messenger::logSent(const std::string &name, bool result) {
     }
 }
 
-std::string Messenger::receive() {
+std::string Messenger::receiveString() {
     return this->inSocket->receive();
 }
 
@@ -94,8 +94,8 @@ void Messenger::joinReceiver() {
 void Messenger::receiverLoop() {
     bool shouldStop = false;
     while (!shouldStop) {
-        std::string from = this->receive();
-        std::string message = this->receive();
+        std::string from = this->receiveString();
+        std::string message = this->receiveString();
         if (message == "kill") {
             shouldStop = true;
         }
@@ -117,4 +117,21 @@ bool Messenger::sendBroadcast(const Envelope &envelope) {
     std::string serializedEnvelope = serializer->serialize(envelope);
 
     return this->sendBroadcast(serializedEnvelope);
+}
+
+std::unique_ptr<Envelope> Messenger::receive() {
+    MessageSerializerFactory factory;
+    auto serializer = factory.createSerializer(MessageType::ENVELOPE);
+    std::string sender = this->receiveString();
+    std::string serializedEnvelope = this->receiveString();
+    auto message = serializer->deserialize(serializedEnvelope);
+    auto envelope = std::unique_ptr<Envelope>(dynamic_cast<Envelope *>(message.release()));
+    envelope->setSender(sender);
+    LoggerSingleton::getInstance()->log(serializedEnvelope.append(" from ").append(sender));
+
+    return envelope;
+}
+
+const std::string &Messenger::getIdentity() const {
+    return this->identity;
 }

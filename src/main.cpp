@@ -24,19 +24,18 @@ int main(int argc, char *argv[]) {
         zmq::context_t context(1);
         auto peers = readConfiguration(configPath);
         std::pair<std::string, std::string> selfConfig = *(peers.find(name));
-        if (name == "alpha") {
+        if (name == "beta") {
             Messenger m(context, selfConfig, peers);
             m.listen();
-            Message *message = new StringMessage("test");
-            Envelope envelope(message);
-            m.send("beta", envelope);
-            delete message;
-            message = new StringMessage("kill");
-            Envelope envelope2(message);
-            m.send("beta", envelope2);
-            delete message;
+            auto message = std::make_unique<StringMessage>("test");
+            Envelope envelope(std::move(message));
+            m.send("alpha", envelope);
+            message = std::make_unique<StringMessage>("kill");
+            Envelope envelope2(std::move(message));
+            m.send("alpha", envelope2);
         } else {
             Messenger m(context, selfConfig, peers);
+            auto e = m.receive();
             m.listen();
         }
     } catch (const std::exception &ex) {

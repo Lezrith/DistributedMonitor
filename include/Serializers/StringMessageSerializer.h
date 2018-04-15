@@ -9,7 +9,7 @@ class StringMessageSerializer : public MessageSerializer {
 public:
     std::string serialize(const Message &message) override;
 
-    Message deserialize(const std::string &string) override;
+    std::unique_ptr<Message> deserialize(const std::string &string) override;
 };
 
 

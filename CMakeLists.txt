@@ -17,7 +17,7 @@ find_library(ZeroMQ_LIBRARY
         PATHS ${PC_ZeroMQ_LIBRARY_DIRS}
         )
 
-include_directories(include include/Messages include/Serializers)
+include_directories(include include/Messages include/Serializers include/Utils)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 file(GLOB_RECURSE HEADERS "include/*.h")

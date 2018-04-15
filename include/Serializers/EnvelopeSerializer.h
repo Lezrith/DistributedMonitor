@@ -6,7 +6,7 @@
 #include <string>
 #include "MessageSerializer.h"
 
-class EnvelopeSerializer : MessageSerializer {
+class EnvelopeSerializer : public MessageSerializer {
     std::string serialize(const Message &message) override;
 
     Message deserialize(const std::string &string) override;

@@ -2,6 +2,8 @@
 
 std::unique_ptr<MessageSerializer> MessageSerializerFactory::createSerializer(MessageType type) {
     switch (type) {
+        case ENVELOPE:
+            return std::make_unique<EnvelopeSerializer>();
         case STRING:
             return std::make_unique<StringMessageSerializer>();
         case REQUEST:

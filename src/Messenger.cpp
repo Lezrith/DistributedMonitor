@@ -1,3 +1,4 @@
+#include <Messages/Envelope.h>
 #include "Messenger.h"
 
 Messenger::Messenger(zmq::context_t &context, std::pair<std::string, std::string> &selfConfig, std::map<std::string, std::string> &peers) {
@@ -100,4 +101,20 @@ void Messenger::receiverLoop() {
         }
         LoggerSingleton::getInstance()->log(message.append(" from ").append(from));
     }
+}
+
+bool Messenger::send(const std::string &name, const Envelope &envelope) {
+    MessageSerializerFactory factory;
+    auto serializer = factory.createSerializer(envelope.getType());
+    std::string serializedEnvelope = serializer->serialize(envelope);
+
+    return this->send(name, serializedEnvelope);
+}
+
+bool Messenger::sendBroadcast(const Envelope &envelope) {
+    MessageSerializerFactory factory;
+    auto serializer = factory.createSerializer(envelope.getType());
+    std::string serializedEnvelope = serializer->serialize(envelope);
+
+    return this->sendBroadcast(serializedEnvelope);
 }

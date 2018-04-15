@@ -9,6 +9,8 @@
 #include <map>
 #include <thread>
 #include <regex>
+#include "Messages/Message.h"
+#include "Serializers/MessageSerializerFactory.h"
 #include "SafeSocket.h"
 #include "Logger.h"
 
@@ -20,7 +22,11 @@ public:
 
     bool send(const std::string &name, const std::string &string);
 
+    bool send(const std::string &name, const Envelope &envelope);
+
     bool sendBroadcast(const std::string &string);
+
+    bool sendBroadcast(const Envelope &envelope);
 
     std::string receive();
 

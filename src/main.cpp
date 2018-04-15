@@ -1,4 +1,5 @@
 #include <SafeSocket.h>
+#include "Messages/Envelope.h"
 #include "main.h"
 
 std::map<std::string, std::string> readConfiguration(std::string &path) {
@@ -26,10 +27,14 @@ int main(int argc, char *argv[]) {
         if (name == "alpha") {
             Messenger m(context, selfConfig, peers);
             m.listen();
-            auto test = std::string("test");
-            m.sendBroadcast(test);
-            test = "kill";
-            m.sendBroadcast(test);
+            Message *message = new StringMessage("test");
+            Envelope envelope(message);
+            m.send("beta", envelope);
+            delete message;
+            message = new StringMessage("kill");
+            Envelope envelope2(message);
+            m.send("beta", envelope2);
+            delete message;
         } else {
             Messenger m(context, selfConfig, peers);
             m.listen();

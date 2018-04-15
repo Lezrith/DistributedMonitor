@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(DistributedMonitor)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pthread")
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_FLAGS_DEBUG "-g" CACHE INTERNAL "" FORCE)
 find_package(PkgConfig)
 pkg_check_modules(PC_ZeroMQ QUIET zmq)
@@ -17,7 +17,7 @@ find_library(ZeroMQ_LIBRARY
         PATHS ${PC_ZeroMQ_LIBRARY_DIRS}
         )
 
-include_directories(include)
+include_directories(include include/Messages include/Serializers)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 file(GLOB_RECURSE HEADERS "include/*.h")

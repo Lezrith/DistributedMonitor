@@ -9,9 +9,10 @@ std::unique_ptr<MessageSerializer> MessageSerializerFactory::createSerializer(Me
         case PRIVILEGE:
             return std::make_unique<PrivilegeMessageSerializer>();
         case REQUEST:
-        case REPLY:
+            return std::make_unique<RequestMessageSerializer>();
         case SIGNAL:
         case POISON:
+        case REPLY:
         default:
             throw std::logic_error("Unknown message type" + type);
     }

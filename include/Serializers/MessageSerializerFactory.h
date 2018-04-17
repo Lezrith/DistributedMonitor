@@ -8,6 +8,7 @@
 #include "Serializers/StringMessageSerializer.h"
 #include "Serializers/EnvelopeSerializer.h"
 #include "Serializers/PrivilegeMessageSerializer.h"
+#include "Serializers/RequestMessageSerializer.h"
 #include "Messages/Message.h"
 #include "MessageSerializer.h"
 

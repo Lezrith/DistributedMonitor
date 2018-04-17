@@ -1,18 +1,20 @@
 #include <Messages/Envelope.h>
 #include "Messenger.h"
 
-Messenger::Messenger(zmq::context_t &context, std::pair<std::string, std::string> &selfConfig, std::map<std::string, std::string> &peers) : identity(selfConfig.first) {
+Messenger::Messenger(zmq::context_t &context, std::pair<std::string, std::string> &selfConfig, std::map<std::string, std::string> &peersConfig) : identity(selfConfig.first),
+                                                                                                                                                  selfAddress(selfConfig.second),
+                                                                                                                                                  peersConfig(peersConfig) {
     this->createInSocket(context, selfConfig.second);
-    this->createOutSockets(context, selfConfig.first, peers);
+    this->createOutSockets(context, selfConfig.first, peersConfig);
 }
 
-void Messenger::createOutSockets(zmq::context_t &context, const std::string &identity, const std::map<std::string, std::string> &peers) {
-    for (auto &&peer : peers) {
+void Messenger::createOutSockets(zmq::context_t &context, const std::string &identity, const std::map<std::string, std::string> &peersConfig) {
+    for (auto &&config : peersConfig) {
         auto *socket = new SafeSocket(context, zmq::socket_type::dealer, identity);
-        socket->connect(peer.second);
-        this->outSockets.insert(std::pair<std::string, SafeSocket *>(peer.first, socket));
+        socket->connect(config.second);
+        this->outSockets.insert(std::pair<std::string, SafeSocket *>(config.first, socket));
 
-        LoggerSingleton::getInstance()->log("Connected outSocket to " + peer.second);
+        LoggerSingleton::getInstance()->log("Connected outSocket to " + config.second);
     }
 }
 
@@ -35,13 +37,15 @@ Messenger::~Messenger() {
 bool Messenger::send(const std::string &name, const std::string &string) {
     SafeSocket *socket = this->findPeerSocket(name);
     bool result = socket->send(string);
-    this->logSent(name, result);
+    //this->logSent(name, MessageType::STRING, string, result);
     return result;
 }
 
-void Messenger::logSent(const std::string &name, bool result) {
+void Messenger::logSent(const std::string &name, MessageType type, const std::string &message, bool result) {
     if (result) {
-        LoggerSingleton::getInstance()->log("Sent to " + name);
+        std::stringstream ss;
+        ss << "Sent " << messageTypeToString(type) << " message(" << message << ") to " << name;
+        LoggerSingleton::getInstance()->log(ss.str());
     } else {
         LoggerSingleton::getInstance()->log("Error while sending to " + name);
     }
@@ -66,7 +70,6 @@ bool Messenger::sendBroadcast(const std::string &string) {
     }
     for (auto &&socket : this->outSockets) {
         result = socket.second->sendUnsafe(string) && result;
-        this->logSent(socket.first, result);
     }
     for (auto &&socket : this->outSockets) {
         socket.second->unlock();
@@ -95,9 +98,7 @@ void Messenger::receiverLoop() {
     bool shouldStop = false;
     while (!shouldStop) {
         auto envelope = this->receive();
-
         shouldStop = envelope->getPayloadType() == MessageType::POISON;
-        //LoggerSingleton::getInstance()->log(message.append(" from ").append(from));
     }
 }
 
@@ -105,16 +106,18 @@ bool Messenger::send(const std::string &name, const Envelope &envelope) {
     MessageSerializerFactory factory;
     auto serializer = factory.createSerializer(envelope.getType());
     std::string serializedEnvelope = serializer->serialize(envelope);
-
-    return this->send(name, serializedEnvelope);
+    bool result = this->send(name, serializedEnvelope);
+    this->logSent(name, envelope.getPayloadType(), serializedEnvelope, result);
+    return result;
 }
 
 bool Messenger::sendBroadcast(const Envelope &envelope) {
     MessageSerializerFactory factory;
     auto serializer = factory.createSerializer(envelope.getType());
     std::string serializedEnvelope = serializer->serialize(envelope);
-
-    return this->sendBroadcast(serializedEnvelope);
+    bool result = this->sendBroadcast(serializedEnvelope);
+    this->logSent("BROADCAST", envelope.getPayloadType(), serializedEnvelope, result);
+    return result;
 }
 
 std::unique_ptr<Envelope> Messenger::receive() {
@@ -125,17 +128,23 @@ std::unique_ptr<Envelope> Messenger::receive() {
     auto message = serializer->deserialize(serializedEnvelope);
     auto envelope = std::unique_ptr<Envelope>(dynamic_cast<Envelope *>(message.release()));
     envelope->setSender(sender);
-    LoggerSingleton::getInstance()->log(serializedEnvelope.append(" from ").append(sender));
+    this->logReceived(sender != this->identity ? sender : "SELF", envelope->getPayloadType(), serializedEnvelope);
     this->notifySubscribers(*envelope);
 
     return envelope;
+}
+
+void Messenger::logReceived(const std::string &sender, MessageType type, const std::string &string) {
+    std::stringstream ss;
+    ss << "Received " << messageTypeToString(type) << " message(" << string << ") from " << sender;
+    LoggerSingleton::getInstance()->log(ss.str());
 }
 
 const std::string &Messenger::getIdentity() const {
     return this->identity;
 }
 
-CallbackWrapper<Envelope> Messenger::registerCallback(MessageType type, const std::function<void(const Envelope &)> &callback) {
+CallbackWrapper<Envelope> *Messenger::registerCallback(MessageType type, const std::function<void(const Envelope &)> &callback) {
     return this->callbackRepository.registerCallback(type, callback);
 }
 
@@ -148,4 +157,12 @@ void Messenger::notifySubscribers(const Envelope &envelope) {
     for (auto &&callback : callbacks) {
         callback(envelope);
     }
+}
+
+std::vector<std::string> Messenger::getPeers() const {
+    std::vector<std::string> peers;
+    for (auto &&config : this->peersConfig) {
+        peers.emplace_back(config.first);
+    }
+    return peers;
 }

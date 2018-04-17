@@ -1,6 +1,7 @@
 #include <SafeSocket.h>
 #include <Messages/PrivilegeMessage.h>
 #include "Messages/Envelope.h"
+#include "DistributedMutex.h"
 #include "main.h"
 
 std::map<std::string, std::string> readConfiguration(std::string &path) {
@@ -25,30 +26,19 @@ int main(int argc, char *argv[]) {
         zmq::context_t context(1);
         auto peers = readConfiguration(configPath);
         std::pair<std::string, std::string> selfConfig = *(peers.find(name));
-        if (name == "beta") {
-            Messenger m(context, selfConfig, peers);
-            m.listen();
-            std::deque<std::string> d;
-            d.emplace_back("alpha");
-            d.emplace_back("beta");
-            d.emplace_back("gamma");
-            std::map<std::string, int> r;
-            r["alpha"] = 12;
-            r["gamma"] = 54;
-            auto message = std::make_unique<PrivilegeMessage>(d, r);
-            std::cout << message->getmutexUUID() << std::endl;
+        Messenger m(context, selfConfig, peers);
+        m.listen();
+        DistributedMutex mutex(m, sole::rebuild("daca9e3a-cbdd-4797-a5dc-4071fd623dbf"));
+        sleep(5);
+        LoggerSingleton::getInstance()->log("before lock");
+        mutex.lock();
+        LoggerSingleton::getInstance()->log("after lock");
+        sleep(5);
+        LoggerSingleton::getInstance()->log("before unlock");
+        mutex.unlock();
+        LoggerSingleton::getInstance()->log("after unlock");
+        getchar();
 
-            Envelope envelope(std::move(message));
-
-            m.send("alpha", envelope);
-            //message = std::make_unique<StringMessage>("kill");
-            //Envelope envelope2(std::move(message));
-            //m.send("alpha", envelope2);
-        } else {
-            Messenger m(context, selfConfig, peers);
-            m.registerCallback(MessageType::PRIVILEGE, [](const Envelope &envelope) { std::cout << envelope.getSender() << " " << envelope.getType() << std::endl; });
-            m.listen();
-        }
     } catch (const std::exception &ex) {
         LoggerSingleton::getInstance()->log(ex.what());
     }

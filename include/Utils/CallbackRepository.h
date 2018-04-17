@@ -16,16 +16,16 @@ template<typename T, typename U>
 class CallbackRepository {
     typedef std::vector<CallbackWrapper<U>> CallbackVector;
 public:
-    CallbackWrapper<U> registerCallback(T key, const std::function<void(const Envelope &)> &callback) {
+    CallbackWrapper<U> *registerCallback(T key, const std::function<void(const Envelope &)> &callback) {
         std::lock_guard<std::mutex> guard(this->mutex);
         auto iter = this->callbackVectors.find(key);
         if (iter == this->callbackVectors.end()) {
             this->callbackVectors.insert(std::pair<T, CallbackVector>(key, CallbackVector()));
             iter = this->callbackVectors.find(key);
         }
-        CallbackWrapper<U> c(callback);
-        iter->second.push_back(c);
-        return c;
+        CallbackWrapper<U> wrapper(callback);
+        iter->second.push_back(wrapper);
+        return &(*iter->second.end());
     }
 
     void unregisterCallback(const CallbackWrapper<U> &callback) {

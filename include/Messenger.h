@@ -17,7 +17,7 @@
 
 class Messenger {
 public:
-    Messenger(zmq::context_t &context, std::pair<std::string, std::string> &selfConfig, std::map<std::string, std::string> &peers);
+    Messenger(zmq::context_t &context, std::pair<std::string, std::string> &selfConfig, std::map<std::string, std::string> &peersConfig);
 
     ~Messenger();
 
@@ -39,7 +39,9 @@ public:
 
     const std::string &getIdentity() const;
 
-    CallbackWrapper<Envelope> registerCallback(MessageType type, const std::function<void(const Envelope &)> &callback);
+    std::vector<std::string> getPeers() const;
+
+    CallbackWrapper<Envelope> *registerCallback(MessageType type, const std::function<void(const Envelope &)> &callback);
 
     void unregisterCallback(const CallbackWrapper<Envelope> &callback);
 private:
@@ -48,6 +50,8 @@ private:
     std::map<std::string, SafeSocket *> outSockets;
     std::string identity;
     CallbackRepository<MessageType, Envelope> callbackRepository;
+    std::string selfAddress;
+    std::map<std::string, std::string> peersConfig;
 
     SafeSocket *findPeerSocket(const std::string &name);
 
@@ -55,11 +59,13 @@ private:
 
     void createInSocket(zmq::context_t &context, std::string address);
 
-    void createOutSockets(zmq::context_t &context, const std::string &identity, const std::map<std::string, std::string> &peers);
+    void createOutSockets(zmq::context_t &context, const std::string &identity, const std::map<std::string, std::string> &peersConfig);
 
-    void logSent(const std::string &name, bool result);
+    void logSent(const std::string &name, MessageType type, const std::string &message, bool result);
 
     void notifySubscribers(const Envelope &envelope);
+
+    void logReceived(const std::string &sender, MessageType type, const std::string &string);
 };
 
 

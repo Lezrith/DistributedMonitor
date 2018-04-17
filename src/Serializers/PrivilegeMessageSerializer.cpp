@@ -47,7 +47,7 @@ std::deque<std::string> PrivilegeMessageSerializer::deserializeWaitingNodes(std:
 
 std::map<std::string, int> PrivilegeMessageSerializer::deserializeRequestNumbers(std::string &string) const {
     std::map<std::string, int> requestNumbers;
-    std::regex regex(R"(\((\w+),(\d+)\))");
+    std::regex regex(R"(\((\w+),(-?\d+)\))");
     std::smatch match;
     std::string requestNumbersString = string;
     while (regex_search(requestNumbersString, match, regex)) {

@@ -9,7 +9,7 @@ std::string RequestMessageSerializer::serialize(const Message &message) {
 }
 
 std::unique_ptr<Message> RequestMessageSerializer::deserialize(const std::string &string) {
-    std::istringstream iss;
+    std::istringstream iss(string);
     std::string mutexUUID;
     std::getline(iss, mutexUUID, ';');
     std::string requestNumberString;

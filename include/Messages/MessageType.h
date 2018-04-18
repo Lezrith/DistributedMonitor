@@ -9,8 +9,10 @@ enum MessageType {
     REQUEST,
     REPLY,
     PRIVILEGE,
+    WAIT,
     SIGNAL,
-    POISON
+    POISON,
+    ACKNOWLEDGE,
 };
 
 std::string messageTypeToString(MessageType type);

@@ -28,15 +28,17 @@ int main(int argc, char *argv[]) {
         std::pair<std::string, std::string> selfConfig = *(peers.find(name));
         Messenger m(context, selfConfig, peers);
         m.listen();
-        DistributedMutex mutex(m, sole::rebuild("daca9e3a-cbdd-4797-a5dc-4071fd623dbf"));
-        sleep(5);
-        LoggerSingleton::getInstance()->log("before lock");
-        mutex.lock();
-        LoggerSingleton::getInstance()->log("after lock");
-        sleep(5);
-        LoggerSingleton::getInstance()->log("before unlock");
-        mutex.unlock();
-        LoggerSingleton::getInstance()->log("after unlock");
+        m.registerCallback(MessageType::STRING, [&m](const Envelope &e) {
+            auto stringMessage = dynamic_cast<const StringMessage *>(e.getPayload());
+            sole::uuid uuid = sole::rebuild(stringMessage->getText());
+            auto ack = std::make_unique<AcknowledgeMessage>(uuid);
+            m.send("beta", Envelope(std::move(ack)));
+        });
+        if (name == "beta") {
+            sole::uuid uuid = sole::uuid0();
+            auto str = std::make_unique<StringMessage>(uuid.str());
+            m.sendBroadcastWithACK(Envelope(std::move(str)), uuid);
+        }
         getchar();
 
     } catch (const std::exception &ex) {

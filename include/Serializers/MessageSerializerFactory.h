@@ -9,6 +9,7 @@
 #include "Serializers/EnvelopeSerializer.h"
 #include "Serializers/PrivilegeMessageSerializer.h"
 #include "Serializers/RequestMessageSerializer.h"
+#include "Serializers/AcknowledgeMessageSerializer.h"
 #include "Messages/Message.h"
 #include "MessageSerializer.h"
 

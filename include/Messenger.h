@@ -9,8 +9,11 @@
 #include <map>
 #include <thread>
 #include <regex>
+#include <condition_variable>
+#include "Utils/Sole/sole.h"
 #include "Utils/CallbackRepository.h"
 #include "Messages/Message.h"
+#include "Messages/AcknowledgeMessage.h"
 #include "Serializers/MessageSerializerFactory.h"
 #include "SafeSocket.h"
 #include "Logger.h"
@@ -44,6 +47,8 @@ public:
     CallbackWrapper<Envelope> *registerCallback(MessageType type, const std::function<void(const Envelope &)> &callback);
 
     void unregisterCallback(const CallbackWrapper<Envelope> &callback);
+
+    void sendBroadcastWithACK(const Envelope &envelope, sole::uuid requestUUID);
 private:
     std::thread *receiverThread = nullptr;
     SafeSocket *inSocket;

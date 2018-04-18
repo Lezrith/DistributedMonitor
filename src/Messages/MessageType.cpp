@@ -16,6 +16,8 @@ std::string messageTypeToString(MessageType type) {
             return "Signal";
         case MessageType::POISON:
             return "Poison";
+        case MessageType::ACKNOWLEDGE:
+            return "Acknowledge";
         default:
             return "Unknown";
     }

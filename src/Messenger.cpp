@@ -44,7 +44,7 @@ bool Messenger::send(const std::string &name, const std::string &string) {
 void Messenger::logSent(const std::string &name, MessageType type, const std::string &message, bool result) {
     if (result) {
         std::stringstream ss;
-        ss << "Sent " << messageTypeToString(type) << " message(" << message << ") to " << name;
+        ss << "Sent " << messageTypeToString(type) << " message(" << message << ") to " << (name != this->identity ? name : "SELF");
         LoggerSingleton::getInstance()->log(ss.str());
     } else {
         LoggerSingleton::getInstance()->log("Error while sending to " + name);
@@ -128,7 +128,7 @@ std::unique_ptr<Envelope> Messenger::receive() {
     auto message = serializer->deserialize(serializedEnvelope);
     auto envelope = std::unique_ptr<Envelope>(dynamic_cast<Envelope *>(message.release()));
     envelope->setSender(sender);
-    this->logReceived(sender != this->identity ? sender : "SELF", envelope->getPayloadType(), serializedEnvelope);
+    this->logReceived(sender, envelope->getPayloadType(), serializedEnvelope);
     this->notifySubscribers(*envelope);
 
     return envelope;
@@ -136,7 +136,7 @@ std::unique_ptr<Envelope> Messenger::receive() {
 
 void Messenger::logReceived(const std::string &sender, MessageType type, const std::string &string) {
     std::stringstream ss;
-    ss << "Received " << messageTypeToString(type) << " message(" << string << ") from " << sender;
+    ss << "Received " << messageTypeToString(type) << " message(" << string << ") from " << (sender != this->identity ? sender : "SELF");
     LoggerSingleton::getInstance()->log(ss.str());
 }
 
@@ -165,4 +165,28 @@ std::vector<std::string> Messenger::getPeers() const {
         peers.emplace_back(config.first);
     }
     return peers;
+}
+
+// WTF how can you tell uuid of the message on the other end
+void Messenger::sendBroadcastWithACK(const Envelope &envelope, sole::uuid requestUUID) {
+    std::mutex m;
+    std::condition_variable cv;
+    std::unique_lock<std::mutex> lock(m);
+    unsigned long repliesNeeded = this->peersConfig.size();
+    std::function<void(const Envelope &)> onACKReceived = [&repliesNeeded, &m, &cv, &requestUUID](const Envelope &e) {
+        auto acknowledgeMessage = dynamic_cast<const AcknowledgeMessage *>(e.getPayload());
+        if (acknowledgeMessage->getRequestUUID() == requestUUID) {
+            std::lock_guard<std::mutex> guard(m);
+            repliesNeeded--;
+            if (repliesNeeded == 0) {
+                cv.notify_one();
+            }
+        }
+    };
+    auto callbackHandler = this->registerCallback(MessageType::ACKNOWLEDGE, onACKReceived);
+    this->sendBroadcast(envelope);
+    if (repliesNeeded != 0) {
+        cv.wait(lock);
+    }
+    this->unregisterCallback(*callbackHandler);
 }

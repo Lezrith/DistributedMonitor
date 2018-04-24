@@ -49,6 +49,7 @@ public:
     void unregisterCallback(const CallbackWrapper<Envelope> &callback);
 
     void sendBroadcastWithACK(const Envelope &envelope, sole::uuid requestUUID);
+
 private:
     std::thread *receiverThread = nullptr;
     SafeSocket *inSocket;

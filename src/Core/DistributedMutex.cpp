@@ -1,4 +1,4 @@
-#include "DistributedMutex.h"
+#include "Core/DistributedMutex.h"
 
 DistributedMutex::DistributedMutex(Messenger &messenger, const sole::uuid &UUID) : UUID(UUID), messenger(messenger), isRequesting(false), identity(messenger.getIdentity()) {
     std::vector<std::string> peers = messenger.getPeers();

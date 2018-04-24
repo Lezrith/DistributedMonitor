@@ -1,7 +1,7 @@
-#include <SafeSocket.h>
+#include <Core/SafeSocket.h>
 #include <Messages/PrivilegeMessage.h>
 #include "Messages/Envelope.h"
-#include "DistributedMutex.h"
+#include "Core/DistributedMutex.h"
 #include "main.h"
 
 std::map<std::string, std::string> readConfiguration(std::string &path) {

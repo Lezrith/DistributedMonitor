@@ -1,5 +1,5 @@
 #include <Messages/Envelope.h>
-#include "Messenger.h"
+#include "Core/Messenger.h"
 
 Messenger::Messenger(zmq::context_t &context, std::pair<std::string, std::string> &selfConfig, std::map<std::string, std::string> &peersConfig) : identity(selfConfig.first),
                                                                                                                                                   selfAddress(selfConfig.second),

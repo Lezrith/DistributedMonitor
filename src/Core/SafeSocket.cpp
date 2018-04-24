@@ -1,4 +1,4 @@
-#include "SafeSocket.h"
+#include "Core/SafeSocket.h"
 
 SafeSocket::SafeSocket(zmq::context_t &context, zmq::socket_type type, int linger) : SafeSocket(context, type, std::string(""), linger) {
 

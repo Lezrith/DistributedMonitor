@@ -37,7 +37,6 @@ Messenger::~Messenger() {
 bool Messenger::send(const std::string &name, const std::string &string) {
     SafeSocket *socket = this->findPeerSocket(name);
     bool result = socket->send(string);
-    //this->logSent(name, MessageType::STRING, string, result);
     return result;
 }
 
@@ -106,6 +105,7 @@ bool Messenger::send(const std::string &name, const Envelope &envelope) {
     MessageSerializerFactory factory;
     auto serializer = factory.createSerializer(envelope.getType());
     std::string serializedEnvelope = serializer->serialize(envelope);
+    this->onSent.notifySubscribers(envelope.getPayloadType(), envelope);
     bool result = this->send(name, serializedEnvelope);
     this->logSent(name, envelope.getPayloadType(), serializedEnvelope, result);
     return result;
@@ -129,7 +129,7 @@ std::unique_ptr<Envelope> Messenger::receive() {
     auto envelope = std::unique_ptr<Envelope>(dynamic_cast<Envelope *>(message.release()));
     envelope->setSender(sender);
     this->logReceived(sender, envelope->getPayloadType(), serializedEnvelope);
-    this->notifySubscribers(*envelope);
+    this->onReceive.notifySubscribers(envelope->getPayloadType(), *envelope);
 
     return envelope;
 }
@@ -144,21 +144,6 @@ const std::string &Messenger::getIdentity() const {
     return this->identity;
 }
 
-CallbackWrapper<Envelope> *Messenger::registerCallback(MessageType type, const std::function<void(const Envelope &)> &callback) {
-    return this->callbackRepository.registerCallback(type, callback);
-}
-
-void Messenger::unregisterCallback(const CallbackWrapper<Envelope> &callback) {
-    this->callbackRepository.unregisterCallback(callback);
-}
-
-void Messenger::notifySubscribers(const Envelope &envelope) {
-    auto callbacks = this->callbackRepository.getCallbacks(envelope.getPayloadType());
-    for (auto &&callback : callbacks) {
-        callback(envelope);
-    }
-}
-
 std::vector<std::string> Messenger::getPeers() const {
     std::vector<std::string> peers;
     for (auto &&config : this->peersConfig) {
@@ -167,7 +152,6 @@ std::vector<std::string> Messenger::getPeers() const {
     return peers;
 }
 
-// WTF how can you tell uuid of the message on the other end
 void Messenger::sendBroadcastWithACK(const Envelope &envelope, sole::uuid requestUUID) {
     std::mutex m;
     std::condition_variable cv;
@@ -183,10 +167,10 @@ void Messenger::sendBroadcastWithACK(const Envelope &envelope, sole::uuid reques
             }
         }
     };
-    auto callbackHandler = this->registerCallback(MessageType::ACKNOWLEDGE, onACKReceived);
+    auto callbackHandler = this->onReceive.subscribe(MessageType::ACKNOWLEDGE, onACKReceived);
     this->sendBroadcast(envelope);
-    if (repliesNeeded != 0) {
+    while (repliesNeeded != 0) {
         cv.wait(lock);
     }
-    this->unregisterCallback(*callbackHandler);
+    this->onReceive.unsubscribe(*callbackHandler);
 }

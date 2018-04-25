@@ -24,8 +24,6 @@ public:
 
     ~Messenger();
 
-    bool send(const std::string &name, const std::string &string);
-
     bool send(const std::string &name, const Envelope &envelope);
 
     bool sendBroadcast(const std::string &string);
@@ -44,18 +42,17 @@ public:
 
     std::vector<std::string> getPeers() const;
 
-    CallbackWrapper<Envelope> *registerCallback(MessageType type, const std::function<void(const Envelope &)> &callback);
-
-    void unregisterCallback(const CallbackWrapper<Envelope> &callback);
-
     void sendBroadcastWithACK(const Envelope &envelope, sole::uuid requestUUID);
 
+    CallbackRepository<MessageType, Envelope> onReceive;
+    CallbackRepository<MessageType, Envelope> onSent;
+
 private:
+    bool send(const std::string &name, const std::string &string);
     std::thread *receiverThread = nullptr;
     SafeSocket *inSocket;
     std::map<std::string, SafeSocket *> outSockets;
     std::string identity;
-    CallbackRepository<MessageType, Envelope> callbackRepository;
     std::string selfAddress;
     std::map<std::string, std::string> peersConfig;
 
@@ -68,8 +65,6 @@ private:
     void createOutSockets(zmq::context_t &context, const std::string &identity, const std::map<std::string, std::string> &peersConfig);
 
     void logSent(const std::string &name, MessageType type, const std::string &message, bool result);
-
-    void notifySubscribers(const Envelope &envelope);
 
     void logReceived(const std::string &sender, MessageType type, const std::string &string);
 };

@@ -16,7 +16,7 @@ template<typename T, typename U>
 class CallbackRepository {
     typedef std::vector<CallbackWrapper<U>> CallbackVector;
 public:
-    CallbackWrapper<U> *registerCallback(T key, const std::function<void(const Envelope &)> &callback) {
+    CallbackWrapper<U> *subscribe(T key, const std::function<void(const U &)> &callback) {
         std::lock_guard<std::mutex> guard(this->mutex);
         auto iter = this->callbackVectors.find(key);
         if (iter == this->callbackVectors.end()) {
@@ -28,11 +28,18 @@ public:
         return &(*iter->second.end());
     }
 
-    void unregisterCallback(const CallbackWrapper<U> &callback) {
+    void unsubscribe(const CallbackWrapper<U> &callback) {
         std::lock_guard<std::mutex> guard(this->mutex);
         for (auto &&kv : callbackVectors) {
             CallbackVector vector = kv.second;
             vector.erase(std::remove(vector.begin(), vector.end(), callback), vector.end());
+        }
+    }
+
+    void notifySubscribers(T key, const U &event) {
+        auto callbacks = this->callbackVectors.find(key)->second;
+        for (auto &&callback : callbacks) {
+            callback(event);
         }
     }
 

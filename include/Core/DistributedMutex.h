@@ -13,7 +13,7 @@
 
 class DistributedMutex {
 public:
-    explicit DistributedMutex(Messenger &messenger, const sole::uuid &UUID);
+    explicit DistributedMutex(std::shared_ptr<Messenger> messenger, const sole::uuid &UUID);
 
     virtual ~DistributedMutex();
 
@@ -23,7 +23,7 @@ public:
 
 private:
     sole::uuid UUID;
-    Messenger &messenger;
+    std::shared_ptr<Messenger> messenger;
     std::map<std::string, int> requestNumbers; // RN
     std::map<std::string, int> grantedRequestNumbers; // LN
     std::deque<std::string> waitingNodes;

@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
         std::pair<std::string, std::string> selfConfig = *(peers.find(name));
         Messenger m(context, selfConfig, peers);
         m.listen();
-        m.registerCallback(MessageType::STRING, [&m](const Envelope &e) {
+        m.onReceive.subscribe(MessageType::STRING, [&m](const Envelope &e) {
             auto stringMessage = dynamic_cast<const StringMessage *>(e.getPayload());
             sole::uuid uuid = sole::rebuild(stringMessage->getText());
             auto ack = std::make_unique<AcknowledgeMessage>(uuid);

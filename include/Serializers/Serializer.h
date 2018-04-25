@@ -7,7 +7,7 @@
 template<typename T>
 class Serializer {
 public:
-    virtual std::string serialize(const T &message) = 0;
+    virtual std::string serialize(const T &object) = 0;
 
     virtual std::unique_ptr<T> deserialize(const std::string &string) = 0;
 };

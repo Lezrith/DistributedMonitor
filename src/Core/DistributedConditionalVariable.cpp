@@ -1,14 +1,17 @@
+#include <Messages/WaitEndMessage.h>
 #include "DistributedConditionalVariable.h"
 
 DistributedConditionalVariable::DistributedConditionalVariable(const std::shared_ptr<Messenger> &messenger, const sole::uuid &UUID, const std::shared_ptr<DistributedMutex> &mutex)
         : messenger(messenger), UUID(UUID), distributedMutex(mutex) {
     this->onWaitReceivedHandle = this->messenger->onReceive.subscribe(MessageType::WAIT, [=](const Envelope &envelope) { this->onWaitReceived(envelope); });
     this->onSignalReceivedHandle = this->messenger->onReceive.subscribe(MessageType::SIGNAL, [=](const Envelope &envelope) { this->onSignalReceived(envelope); });
+    this->onWaitEndReceivedHandle = this->messenger->onReceive.subscribe(MessageType::WAIT_END, [=](const Envelope &envelope) { this->onWaitEndReceived(envelope); });
 }
 
 DistributedConditionalVariable::~DistributedConditionalVariable() {
     this->messenger->onReceive.unsubscribe(*this->onWaitReceivedHandle);
     this->messenger->onReceive.unsubscribe(*this->onSignalReceivedHandle);
+    this->messenger->onReceive.unsubscribe(*this->onWaitEndReceivedHandle);
 }
 
 void DistributedConditionalVariable::wait() {
@@ -43,14 +46,23 @@ void DistributedConditionalVariable::onSignalReceived(const Envelope &envelope) 
         throw std::logic_error("Expected signal message but got message of type: " + envelope.getPayloadType());
     }
     auto signalMessage = dynamic_cast<const SignalMessage *>(envelope.getPayload());
-    const std::string &sender = envelope.getSender();
     if (signalMessage->getConditionalVariableUUID() == this->UUID) {
         this->waitingForSignal.notify_one();
     }
-    auto iter = std::find(this->waitingNodes.begin(), this->waitingNodes.end(), this->messenger->getIdentity());
-    this->waitingNodes.erase(iter);
-    std::unique_ptr<Message> ack = std::make_unique<AcknowledgeMessage>(signalMessage->getMessageUUID());
-    this->messenger->send(sender, Envelope(ack));
 }
 
-
+void DistributedConditionalVariable::onWaitEndReceived(const Envelope &envelope) {
+    std::lock_guard<std::mutex> guard(this->mutex);
+    if (envelope.getPayloadType() != MessageType::WAIT_END) {
+        throw std::logic_error("Expected wait_end message but got message of type: " + envelope.getPayloadType());
+    }
+    auto waitEndMessage = dynamic_cast<const WaitEndMessage *>(envelope.getPayload());
+    if (waitEndMessage->getConditionalVariableUUID() == this->UUID) {
+        auto iter = std::find(this->waitingNodes.begin(), this->waitingNodes.end(), envelope.getSender());
+        if (iter != this->waitingNodes.end()) {
+            this->waitingNodes.erase(iter);
+        } else {
+            throw std::logic_error("Received wait_end by node is not in queue");
+        }
+    }
+}

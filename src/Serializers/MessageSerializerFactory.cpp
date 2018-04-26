@@ -12,6 +12,8 @@ std::unique_ptr<MessageSerializer> MessageSerializerFactory::createSerializer(Me
             return std::make_unique<RequestMessageSerializer>();
         case ACKNOWLEDGE:
             return std::make_unique<AcknowledgeMessageSerializer>();
+        case WAIT:
+            return std::make_unique<WaitMessageSerializer>();
         case SIGNAL:
         case POISON:
         case REPLY:

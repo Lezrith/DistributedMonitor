@@ -31,10 +31,13 @@ private:
     std::condition_variable waitingForSignal;
     CallbackWrapper<Envelope> *onWaitReceivedHandle;
     CallbackWrapper<Envelope> *onSignalReceivedHandle;
+    CallbackWrapper<Envelope> *onWaitEndReceivedHandle;
 
     void onWaitReceived(const Envelope &envelope);
 
     void onSignalReceived(const Envelope &envelope);
+
+    void onWaitEndReceived(const Envelope &envelope);
 };
 
 

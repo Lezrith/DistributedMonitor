@@ -31,13 +31,13 @@ int main(int argc, char *argv[]) {
         m.onReceive.subscribe(MessageType::STRING, [&m](const Envelope &e) {
             auto stringMessage = dynamic_cast<const StringMessage *>(e.getPayload());
             sole::uuid uuid = sole::rebuild(stringMessage->getText());
-            auto ack = std::make_unique<AcknowledgeMessage>(uuid);
-            m.send("beta", Envelope(std::move(ack)));
+            std::unique_ptr<Message> ack = std::make_unique<AcknowledgeMessage>(uuid);
+            m.send("beta", Envelope(ack));
         });
         if (name == "beta") {
             sole::uuid uuid = sole::uuid0();
-            auto str = std::make_unique<StringMessage>(uuid.str());
-            m.sendBroadcastWithACK(Envelope(std::move(str)), uuid);
+            std::unique_ptr<Message> str = std::make_unique<StringMessage>(uuid.str());
+            m.sendBroadcastWithACK(Envelope(str), uuid);
         }
         getchar();
 

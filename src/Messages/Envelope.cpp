@@ -1,6 +1,6 @@
 #include "Envelope.h"
 
-Envelope::Envelope(std::unique_ptr<Message> message) : Message(MessageType::ENVELOPE) {
+Envelope::Envelope(std::unique_ptr<Message> &message) : Message(MessageType::ENVELOPE) {
     this->payloadType = message->getType();
     this->payload = std::move(message);
 }

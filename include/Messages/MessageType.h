@@ -10,6 +10,7 @@ enum MessageType {
     REPLY,
     PRIVILEGE,
     WAIT,
+    WAIT_END,
     SIGNAL,
     POISON,
     ACKNOWLEDGE,

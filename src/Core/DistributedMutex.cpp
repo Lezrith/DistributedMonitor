@@ -36,8 +36,8 @@ void DistributedMutex::lock() {
 
 void DistributedMutex::RequestPrivilege() {
     int requestNumber = ++this->requestNumbers[this->identity];
-    auto request = std::make_unique<RequestMessage>(this->UUID, requestNumber);
-    Envelope envelope(move(request));
+    std::unique_ptr<Message> request = std::make_unique<RequestMessage>(this->UUID, requestNumber);
+    Envelope envelope(request);
     messenger->sendBroadcast(envelope);
 }
 
@@ -54,8 +54,8 @@ void DistributedMutex::unlock() {
 
 void DistributedMutex::SendPrivilege(const std::string &nextHolderIdentity) {
     this->hasPrivilege = false;
-    auto privilegeMessage = std::make_unique<PrivilegeMessage>(this->UUID, this->waitingNodes, this->requestNumbers);
-    Envelope envelope(move(privilegeMessage));
+    std::unique_ptr<Message> privilegeMessage = std::make_unique<PrivilegeMessage>(this->UUID, this->waitingNodes, this->requestNumbers);
+    Envelope envelope(privilegeMessage);
     messenger->send(nextHolderIdentity, envelope);
 }
 

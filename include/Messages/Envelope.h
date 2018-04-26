@@ -8,7 +8,7 @@
 
 class Envelope : public Message {
 public:
-    explicit Envelope(std::unique_ptr<Message> message);
+    explicit Envelope(std::unique_ptr<Message> &message);
 
     MessageType getPayloadType() const;
 

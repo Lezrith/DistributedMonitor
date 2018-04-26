@@ -29,5 +29,5 @@ std::unique_ptr<Message> EnvelopeSerializer::deserialize(const std::string &stri
     std::string payload;
     iss >> payload;
     std::unique_ptr<Message> message = serializer->deserialize(payload);
-    return std::make_unique<Envelope>(std::move(message));
+    return std::make_unique<Envelope>(message);
 }

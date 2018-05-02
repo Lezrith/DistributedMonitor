@@ -98,6 +98,7 @@ void Messenger::receiverLoop() {
     while (!shouldStop) {
         auto envelope = this->receive();
         shouldStop = envelope->getPayloadType() == MessageType::POISON;
+        LoggerSingleton::getInstance()->log("Ready for incoming message");
     }
 }
 
@@ -156,7 +157,7 @@ void Messenger::sendBroadcastWithACK(const Envelope &envelope, sole::uuid reques
     std::mutex m;
     std::condition_variable cv;
     std::unique_lock<std::mutex> lock(m);
-    unsigned long repliesNeeded = this->peersConfig.size();
+    unsigned long repliesNeeded = this->peersConfig.size() - 1;
     std::function<void(const Envelope &)> onACKReceived = [&repliesNeeded, &m, &cv, &requestUUID](const Envelope &e) {
         auto acknowledgeMessage = dynamic_cast<const AcknowledgeMessage *>(e.getPayload());
         if (acknowledgeMessage->getRequestUUID() == requestUUID) {

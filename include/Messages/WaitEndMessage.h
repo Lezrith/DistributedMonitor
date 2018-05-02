@@ -7,13 +7,16 @@
 
 class WaitEndMessage : public Message {
 public:
-    WaitEndMessage(const sole::uuid &conditionalVariableUUID, const sole::uuid &messageUUID);
+    WaitEndMessage(const std::string &identity, const sole::uuid &conditionalVariableUUID, const sole::uuid &messageUUID);
 
     const sole::uuid &getConditionalVariableUUID() const;
 
     const sole::uuid &getMessageUUID() const;
 
+    const std::string &getIdentity() const;
+
 private:
+    std::string identity;
     sole::uuid conditionalVariableUUID;
     sole::uuid messageUUID;
 };

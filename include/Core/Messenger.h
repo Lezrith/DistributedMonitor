@@ -48,13 +48,14 @@ public:
     CallbackRepository<MessageType, Envelope> onSent;
 
 private:
-    bool send(const std::string &name, const std::string &string);
     std::thread *receiverThread = nullptr;
     SafeSocket *inSocket;
     std::map<std::string, SafeSocket *> outSockets;
     std::string identity;
     std::string selfAddress;
     std::map<std::string, std::string> peersConfig;
+
+    bool send(const std::string &name, const std::string &string);
 
     SafeSocket *findPeerSocket(const std::string &name);
 

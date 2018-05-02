@@ -1,7 +1,6 @@
 #include <Core/SafeSocket.h>
 #include <Messages/PrivilegeMessage.h>
-#include "Messages/Envelope.h"
-#include "Core/DistributedMutex.h"
+#include <Core/DistributedConditionalVariable.h>
 #include "main.h"
 
 std::map<std::string, std::string> readConfiguration(std::string &path) {
@@ -26,19 +25,20 @@ int main(int argc, char *argv[]) {
         zmq::context_t context(1);
         auto peers = readConfiguration(configPath);
         std::pair<std::string, std::string> selfConfig = *(peers.find(name));
-        Messenger m(context, selfConfig, peers);
-        m.listen();
-        m.onReceive.subscribe(MessageType::STRING, [&m](const Envelope &e) {
-            auto stringMessage = dynamic_cast<const StringMessage *>(e.getPayload());
-            sole::uuid uuid = sole::rebuild(stringMessage->getText());
-            std::unique_ptr<Message> ack = std::make_unique<AcknowledgeMessage>(uuid);
-            m.send("beta", Envelope(ack));
-        });
+        auto m = std::make_shared<Messenger>(context, selfConfig, peers);
+        auto cvuuid = sole::rebuild("36073ca4-6681-446f-beae-5155faf993c0");
+        auto mutexuuid = sole::rebuild("15e6c267-394d-4a19-b83a-a17e8c43f07f");
+        auto dm = std::make_shared<DistributedMutex>(m, mutexuuid);
+        DistributedConditionalVariable cv(m, cvuuid, dm);
+        m->listen();
+        dm->lock();
         if (name == "beta") {
-            sole::uuid uuid = sole::uuid0();
-            std::unique_ptr<Message> str = std::make_unique<StringMessage>(uuid.str());
-            m.sendBroadcastWithACK(Envelope(str), uuid);
+            cv.wait();
+        } else {
+            sleep(10);
+            cv.signal();
         }
+        dm->unlock();
         getchar();
 
     } catch (const std::exception &ex) {

@@ -18,6 +18,10 @@ std::string messageTypeToString(MessageType type) {
             return "Poison";
         case MessageType::ACKNOWLEDGE:
             return "Acknowledge";
+        case MessageType::WAIT:
+            return "Wait";
+        case MessageType::WAIT_END:
+            return "Wait_end";
         default:
             return "Unknown";
     }

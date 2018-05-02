@@ -37,9 +37,12 @@ public:
     }
 
     void notifySubscribers(T key, const U &event) {
-        auto callbacks = this->callbackVectors.find(key)->second;
-        for (auto &&callback : callbacks) {
-            callback(event);
+        auto iter = this->callbackVectors.find(key);
+        if (iter != this->callbackVectors.end()) {
+            auto callbacks = iter->second;
+            for (auto &&callback : callbacks) {
+                callback(event);
+            }
         }
     }
 

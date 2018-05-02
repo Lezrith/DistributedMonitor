@@ -10,7 +10,9 @@
 #include "Serializers/PrivilegeMessageSerializer.h"
 #include "Serializers/RequestMessageSerializer.h"
 #include "Serializers/AcknowledgeMessageSerializer.h"
+#include "Serializers/WaitEndMessageSerializer.h"
 #include "Serializers/WaitMessageSerializer.h"
+#include "Serializers/SignalMessageSerializer.h"
 #include "Messages/Message.h"
 #include "MessageSerializer.h"
 

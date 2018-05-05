@@ -22,6 +22,8 @@ std::string messageTypeToString(MessageType type) {
             return "Wait";
         case MessageType::WAIT_END:
             return "Wait_end";
+        case MessageType::STATE:
+            return "State";
         default:
             return "Unknown";
     }

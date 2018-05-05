@@ -32,8 +32,8 @@ private:
     bool isRequesting;
     bool hasPrivilege;
     std::string identity;
-    CallbackWrapper<Envelope> *onPrivilegeReceivedHandle;
-    CallbackWrapper<Envelope> *onRequestReceivedHandle;
+    CallbackWrapper<Envelope> onPrivilegeReceivedHandle;
+    CallbackWrapper<Envelope> onRequestReceivedHandle;
 
     void onPrivilegeReceived(const Envelope &envelope);
 
@@ -43,9 +43,9 @@ private:
 
     void updateWaitingQueue();
 
-    void SendPrivilege(const std::string &nextHolderIdentity);
+    void sendPrivilege(const std::string &nextHolderIdentity);
 
-    void RequestPrivilege();
+    void requestPrivilege();
 };
 
 

@@ -14,6 +14,7 @@ enum MessageType {
     SIGNAL,
     POISON,
     ACKNOWLEDGE,
+    STATE,
 };
 
 std::string messageTypeToString(MessageType type);

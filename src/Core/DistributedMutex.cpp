@@ -1,22 +1,29 @@
 #include "Core/DistributedMutex.h"
 
 DistributedMutex::DistributedMutex(std::shared_ptr<Messenger> messenger, const sole::uuid &UUID) : UUID(UUID), messenger(messenger), isRequesting(false),
-                                                                                                   identity(messenger->getIdentity()) {
+                                                                                                   identity(messenger->getIdentity()),
+                                                                                                   onPrivilegeReceivedHandle(messenger->onReceive.subscribe(MessageType::PRIVILEGE,
+                                                                                                                                                            [=](const Envelope &envelope) {
+                                                                                                                                                                this->onPrivilegeReceived(
+                                                                                                                                                                        envelope);
+                                                                                                                                                            })),
+                                                                                                   onRequestReceivedHandle(messenger->onReceive.subscribe(MessageType::REQUEST,
+                                                                                                                                                          [=](const Envelope &envelope) {
+                                                                                                                                                              this->onRequestReceived(
+                                                                                                                                                                      envelope);
+                                                                                                                                                          })) {
     std::vector<std::string> peers = messenger->getPeers();
     this->hasPrivilege = this->identity == peers.front();
     for (auto &&peer : peers) {
         this->requestNumbers[peer] = -1;
         this->grantedRequestNumbers[peer] = -1;
     }
-
-    this->onPrivilegeReceivedHandle = messenger->onReceive.subscribe(MessageType::PRIVILEGE, [=](const Envelope &envelope) { this->onPrivilegeReceived(envelope); });
-    this->onRequestReceivedHandle = messenger->onReceive.subscribe(MessageType::REQUEST, [=](const Envelope &envelope) { this->onRequestReceived(envelope); });
 }
 
 DistributedMutex::~DistributedMutex() {
-    if (this->onPrivilegeReceivedHandle != nullptr) {
-        this->messenger->onReceive.unsubscribe(*this->onPrivilegeReceivedHandle);
-        this->messenger->onReceive.unsubscribe(*this->onRequestReceivedHandle);
+    if (this->messenger != nullptr) {
+        this->messenger->onReceive.unsubscribe(this->onPrivilegeReceivedHandle);
+        this->messenger->onReceive.unsubscribe(this->onRequestReceivedHandle);
     }
 }
 
@@ -24,7 +31,7 @@ void DistributedMutex::lock() {
     std::unique_lock<std::mutex> lock(this->mutex);
     this->isRequesting = true;
     if (!this->hasPrivilege) {
-        this->RequestPrivilege();
+        this->requestPrivilege();
         this->waitingForPrivilege.wait(lock);
         this->hasPrivilege = true;
         auto iter = std::find(this->waitingNodes.begin(), this->waitingNodes.end(), this->identity);
@@ -35,7 +42,7 @@ void DistributedMutex::lock() {
     LoggerSingleton::getInstance()->log("Entered critical section");
 }
 
-void DistributedMutex::RequestPrivilege() {
+void DistributedMutex::requestPrivilege() {
     int requestNumber = ++this->requestNumbers[this->identity];
     std::unique_ptr<Message> request = std::make_unique<RequestMessage>(this->UUID, requestNumber);
     Envelope envelope(request);
@@ -47,14 +54,14 @@ void DistributedMutex::unlock() {
     this->grantedRequestNumbers[this->identity] = this->requestNumbers[this->identity];
     this->updateWaitingQueue();
     if (!this->waitingNodes.empty()) {
-        this->SendPrivilege(this->waitingNodes.front());
+        this->sendPrivilege(this->waitingNodes.front());
     }
 
     this->isRequesting = false;
     LoggerSingleton::getInstance()->log("Left critical section");
 }
 
-void DistributedMutex::SendPrivilege(const std::string &nextHolderIdentity) {
+void DistributedMutex::sendPrivilege(const std::string &nextHolderIdentity) {
     this->hasPrivilege = false;
     std::unique_ptr<Message> privilegeMessage = std::make_unique<PrivilegeMessage>(this->UUID, this->waitingNodes, this->requestNumbers);
     Envelope envelope(privilegeMessage);
@@ -100,7 +107,7 @@ void DistributedMutex::onRequestReceived(const Envelope &envelope) {
         int requestNumber = std::max(this->requestNumbers[askingNode], requestMessage->getRequestNumber());
         this->requestNumbers[askingNode] = requestNumber;
         if (this->hasPrivilege && !this->isRequesting && requestNumber == (this->grantedRequestNumbers[askingNode] + 1)) {
-            this->SendPrivilege(askingNode);
+            this->sendPrivilege(askingNode);
         }
     }
 }

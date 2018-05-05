@@ -13,6 +13,7 @@
 #include "Serializers/WaitEndMessageSerializer.h"
 #include "Serializers/WaitMessageSerializer.h"
 #include "Serializers/SignalMessageSerializer.h"
+#include "Serializers/StateMessageSerializer.h"
 #include "Messages/Message.h"
 #include "MessageSerializer.h"
 

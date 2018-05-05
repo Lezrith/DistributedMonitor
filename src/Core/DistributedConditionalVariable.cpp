@@ -1,16 +1,15 @@
 #include "DistributedConditionalVariable.h"
 
 DistributedConditionalVariable::DistributedConditionalVariable(const std::shared_ptr<Messenger> &messenger, const sole::uuid &UUID, const std::shared_ptr<DistributedMutex> &mutex)
-        : messenger(messenger), UUID(UUID), distributedMutex(mutex) {
-    this->onWaitReceivedHandle = this->messenger->onReceive.subscribe(MessageType::WAIT, [=](const Envelope &envelope) { this->onWaitReceived(envelope); });
-    this->onSignalReceivedHandle = this->messenger->onReceive.subscribe(MessageType::SIGNAL, [=](const Envelope &envelope) { this->onSignalReceived(envelope); });
-    this->onWaitEndReceivedHandle = this->messenger->onReceive.subscribe(MessageType::WAIT_END, [=](const Envelope &envelope) { this->onWaitEndReceived(envelope); });
-}
+        : messenger(messenger), UUID(UUID), distributedMutex(mutex),
+          onWaitReceivedHandle(this->messenger->onReceive.subscribe(MessageType::WAIT, [=](const Envelope &envelope) { this->onWaitReceived(envelope); })),
+          onSignalReceivedHandle(this->messenger->onReceive.subscribe(MessageType::SIGNAL, [=](const Envelope &envelope) { this->onSignalReceived(envelope); })),
+          onWaitEndReceivedHandle(this->messenger->onReceive.subscribe(MessageType::WAIT_END, [=](const Envelope &envelope) { this->onWaitEndReceived(envelope); })) {}
 
 DistributedConditionalVariable::~DistributedConditionalVariable() {
-    this->messenger->onReceive.unsubscribe(*this->onWaitReceivedHandle);
-    this->messenger->onReceive.unsubscribe(*this->onSignalReceivedHandle);
-    this->messenger->onReceive.unsubscribe(*this->onWaitEndReceivedHandle);
+    this->messenger->onReceive.unsubscribe(this->onWaitReceivedHandle);
+    this->messenger->onReceive.unsubscribe(this->onSignalReceivedHandle);
+    this->messenger->onReceive.unsubscribe(this->onWaitEndReceivedHandle);
 }
 
 void DistributedConditionalVariable::wait() {

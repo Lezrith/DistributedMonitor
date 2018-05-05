@@ -6,7 +6,7 @@
 template<typename U>
 class CallbackWrapper {
 public:
-    explicit CallbackWrapper(std::function<void(const Envelope &)> callback) : callback(std::move(callback)), callbackUUID(sole::uuid()) {}
+    explicit CallbackWrapper(std::function<void(const Envelope &)> callback) : callback(std::move(callback)), callbackUUID(sole::uuid4()) {}
 
     bool operator==(const CallbackWrapper &rhs) const {
         return callbackUUID == rhs.callbackUUID;

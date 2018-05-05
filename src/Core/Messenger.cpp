@@ -163,6 +163,9 @@ void Messenger::sendBroadcastWithACK(const Envelope &envelope, sole::uuid reques
         if (acknowledgeMessage->getRequestUUID() == requestUUID) {
             std::lock_guard<std::mutex> guard(m);
             repliesNeeded--;
+            std::stringstream ss;
+            ss << repliesNeeded << " more replies needed for message: " << acknowledgeMessage->getRequestUUID();
+            LoggerSingleton::getInstance()->log(ss.str());
             if (repliesNeeded == 0) {
                 cv.notify_one();
             }
@@ -173,5 +176,5 @@ void Messenger::sendBroadcastWithACK(const Envelope &envelope, sole::uuid reques
     while (repliesNeeded != 0) {
         cv.wait(lock);
     }
-    this->onReceive.unsubscribe(*callbackHandler);
+    this->onReceive.unsubscribe(callbackHandler);
 }

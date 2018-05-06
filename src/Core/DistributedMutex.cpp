@@ -39,7 +39,7 @@ void DistributedMutex::lock() {
             this->waitingNodes.erase(iter);
         }
     }
-    LoggerSingleton::getInstance()->log("Entered critical section");
+    LoggerSingleton::getInstance()->log(DEBUG, "Entered critical section");
 }
 
 void DistributedMutex::requestPrivilege() {
@@ -58,7 +58,7 @@ void DistributedMutex::unlock() {
     }
 
     this->isRequesting = false;
-    LoggerSingleton::getInstance()->log("Left critical section");
+    LoggerSingleton::getInstance()->log(DEBUG, "Left critical section");
 }
 
 void DistributedMutex::sendPrivilege(const std::string &nextHolderIdentity) {

@@ -17,11 +17,11 @@ void DistributedConditionalVariable::wait() {
     this->sendWait();
 
     this->distributedMutex->unlock();
-    LoggerSingleton::getInstance()->log("Waiting for signal");
+    LoggerSingleton::getInstance()->log(DEBUG, "Waiting for signal");
     this->waitingForSignal.wait(lock);
     this->distributedMutex->lock();
 
-    LoggerSingleton::getInstance()->log("Woke up");
+    LoggerSingleton::getInstance()->log(DEBUG, "Woke up");
 }
 
 void DistributedConditionalVariable::signal() {

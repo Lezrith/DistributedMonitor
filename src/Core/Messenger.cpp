@@ -14,7 +14,7 @@ void Messenger::createOutSockets(zmq::context_t &context, const std::string &ide
         socket->connect(config.second);
         this->outSockets.insert(std::pair<std::string, SafeSocket *>(config.first, socket));
 
-        LoggerSingleton::getInstance()->log("Connected outSocket to " + config.second);
+        LoggerSingleton::getInstance()->log(DEBUG, "Connected outSocket to " + config.second);
     }
 }
 
@@ -23,7 +23,7 @@ void Messenger::createInSocket(zmq::context_t &context, std::string address) {
     address = regex_replace(address, std::regex(R"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"), "*");
     inSocket->bind(address);
 
-    LoggerSingleton::getInstance()->log("Bound inSocket to " + address);
+    LoggerSingleton::getInstance()->log(DEBUG, "Bound inSocket to " + address);
 }
 
 Messenger::~Messenger() {
@@ -44,9 +44,9 @@ void Messenger::logSent(const std::string &name, MessageType type, const std::st
     if (result) {
         std::stringstream ss;
         ss << "Sent " << messageTypeToString(type) << " message(" << message << ") to " << (name != this->identity ? name : "SELF");
-        LoggerSingleton::getInstance()->log(ss.str());
+        LoggerSingleton::getInstance()->log(DEBUG, ss.str());
     } else {
-        LoggerSingleton::getInstance()->log("Error while sending to " + name);
+        LoggerSingleton::getInstance()->log(DEBUG, "Error while sending to " + name);
     }
 }
 
@@ -81,15 +81,15 @@ void Messenger::listen() {
         throw std::logic_error("Receiver is already running");
     }
     this->receiverThread = new std::thread(&Messenger::receiverLoop, this);
-    LoggerSingleton::getInstance()->log("Receiver started");
+    LoggerSingleton::getInstance()->log(DEBUG, "Receiver started");
 }
 
 void Messenger::joinReceiver() {
     if (this->receiverThread != nullptr && this->receiverThread->joinable()) {
         this->receiverThread->join();
-        LoggerSingleton::getInstance()->log("Receiver stopped");
+        LoggerSingleton::getInstance()->log(DEBUG, "Receiver stopped");
     } else {
-        LoggerSingleton::getInstance()->log("Receiver was already stopped");
+        LoggerSingleton::getInstance()->log(DEBUG, "Receiver was already stopped");
     }
 }
 
@@ -100,9 +100,9 @@ void Messenger::receiverLoop() {
         if (envelope->getPayloadType() == MessageType::POISON) {
             shouldStop = true;
             auto poisonMessage = dynamic_cast<const PoisonMessage *>(envelope->getPayload());
-            LoggerSingleton::getInstance()->log("Receiver will shutdown because " + poisonMessage->getReason());
+            LoggerSingleton::getInstance()->log(DEBUG, "Receiver will shutdown because " + poisonMessage->getReason());
         } else {
-            LoggerSingleton::getInstance()->log("Ready for incoming message");
+            LoggerSingleton::getInstance()->log(DEBUG, "Ready for incoming message");
         }
     }
 }
@@ -143,7 +143,7 @@ std::unique_ptr<Envelope> Messenger::receive() {
 void Messenger::logReceived(const std::string &sender, MessageType type, const std::string &string) {
     std::stringstream ss;
     ss << "Received " << messageTypeToString(type) << " message(" << string << ") from " << (sender != this->identity ? sender : "SELF");
-    LoggerSingleton::getInstance()->log(ss.str());
+    LoggerSingleton::getInstance()->log(DEBUG, ss.str());
 }
 
 const std::string &Messenger::getIdentity() const {
@@ -170,7 +170,7 @@ void Messenger::sendBroadcastWithACK(const Envelope &envelope, sole::uuid reques
             repliesNeeded--;
             std::stringstream ss;
             ss << repliesNeeded << " more replies needed for message: " << acknowledgeMessage->getRequestUUID();
-            LoggerSingleton::getInstance()->log(ss.str());
+            LoggerSingleton::getInstance()->log(DEBUG, ss.str());
             if (repliesNeeded == 0) {
                 cv.notify_one();
             }

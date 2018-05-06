@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
         std::string identity = argv[1];
         monitorDemo(configPath, identity);
     } catch (const std::exception &ex) {
-        LoggerSingleton::getInstance()->log(ex.what());
+        LoggerSingleton::getInstance()->log(DEBUG, ex.what());
     }
     return 0;
 }

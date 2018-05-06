@@ -115,7 +115,7 @@ private:
         auto messageUUID = sole::uuid0();
         std::unique_ptr<Message> stateMessage = std::make_unique<StateMessage>(this->UUID, serializedState, messageUUID);
         this->messenger->sendBroadcastWithACK(Envelope(stateMessage), messageUUID);
-        LoggerSingleton::getInstance()->log("Sent state update to peers");
+        LoggerSingleton::getInstance()->log(DEBUG, "Sent state update to peers");
     }
 
     void onStateReceived(const Envelope &envelope) {
@@ -129,7 +129,7 @@ private:
             if (stateMessage->getMonitorUUID() == this->UUID) {
                 StateSerializer serializer;
                 this->state = serializer.deserialize(stateMessage->getSerializedState());
-                LoggerSingleton::getInstance()->log("Received state update from peer");
+                LoggerSingleton::getInstance()->log(DEBUG, "Received state update from peer");
                 std::unique_ptr<Message> ack = std::make_unique<AcknowledgeMessage>(stateMessage->getMessageUUID());
                 this->messenger->send(sender, Envelope(ack));
             }

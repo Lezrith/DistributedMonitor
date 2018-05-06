@@ -2,15 +2,22 @@
 
 Logger::Logger() = default;
 
-void Logger::log(const std::string message) {
-    std::lock_guard<std::mutex> guard(mutex);
-    time_t rawtime;
+void Logger::log(LogLevel logLevel, const std::string message) {
+    if (logLevel >= this->logLevel) {
+        std::lock_guard<std::mutex> guard(this->mutex);
+        time_t rawTime;
 
-    char timeString[80];
+        char timeString[80];
 
-    time(&rawtime);
-    std::tm *timeInfo = localtime(&rawtime);
+        time(&rawTime);
+        std::tm *timeInfo = localtime(&rawTime);
 
-    strftime(timeString, sizeof(timeString), "[%H:%M:%S]", timeInfo);
-    std::cout << timeString << " " << message << std::endl;
+        strftime(timeString, sizeof(timeString), "[%H:%M:%S]", timeInfo);
+        std::cout << timeString << " " << message << std::endl;
+    }
+}
+
+void Logger::setLogLevel(LogLevel logLevel) {
+    std::lock_guard<std::mutex> guard(this->mutex);
+    Logger::logLevel = logLevel;
 }

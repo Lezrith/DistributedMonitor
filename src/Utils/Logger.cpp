@@ -3,7 +3,7 @@
 Logger::Logger() = default;
 
 void Logger::log(LogLevel logLevel, const std::string message) {
-    if (logLevel >= this->logLevel) {
+    if (this->logLevel >= logLevel) {
         std::lock_guard<std::mutex> guard(this->mutex);
         time_t rawTime;
 

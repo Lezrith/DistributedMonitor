@@ -1,5 +1,7 @@
 #include "Demo/MonitorDemo.h"
 
+#define N 10
+
 void waitRandomMilisenconds(int from, int to) {
     std::mt19937_64 eng{std::random_device{}()};
     std::uniform_int_distribution<> dist{from, to};
@@ -28,27 +30,37 @@ void monitorDemo(const std::string &configFile, const std::string identity) {
     DistributedMonitor<std::vector<int>, IntVectorSerializer> monitor(messenger, monitorUUID);
 
     messenger->listen(); // start the receiver thread
+    LoggerSingleton::getInstance()->log(NORMAL, "Receiver started listening for messages");
     sleep(5); // sleep some time to ensure all other nodes are running
     if (identity != "alpha") {
-        for (int i = 0; i < 10; i++) { // put some numbers into shared vector to simulate work
+        LoggerSingleton::getInstance()->log(NORMAL, "Work started");
+        for (int i = 0; i < N; i++) { // put some numbers into shared vector to simulate work
             waitRandomMilisenconds(1000, 5000);
             monitor->emplace_back(::getpid());
+            LoggerSingleton::getInstance()->log(NORMAL, "Placed number in shared vector");
         }
+        LoggerSingleton::getInstance()->log(NORMAL, "Work is finished");
         auto lockedMonitor = monitor.manuallyLock();
         lockedMonitor.signal();
+        LoggerSingleton::getInstance()->log(NORMAL, "Signaled other nodes that work is finished");
     } else {
         {
             auto lockedMonitor = monitor.manuallyLock();
-            while (lockedMonitor->size() < 30) { // wait until other nodes are done with their work
+            unsigned long finalSize = (peers.size() - 1) * N;
+            while (lockedMonitor->size() < finalSize) { // wait until other nodes are done with their work
+                LoggerSingleton::getInstance()->log(NORMAL, "Waiting for others to finish");
                 lockedMonitor.wait();
+                LoggerSingleton::getInstance()->log(NORMAL, "Woke up - checking condition");
             }
+            LoggerSingleton::getInstance()->log(NORMAL, "All other nodes finished work");
             auto vector = *monitor.getStateUnsafe().get();
+            std::stringstream ss;
             for (auto &&item : vector) {
-                std::cout << item << " ";
+                ss << item << " ";
             }
-            std::cout << std::endl;
-            std::flush(std::cout);
+            LoggerSingleton::getInstance()->log(NORMAL, "Final vector: " + ss.str());
         }
+        LoggerSingleton::getInstance()->log(NORMAL, "Sending shutdown signal to all nodes");
         messenger->shutdown(); // send shutdown signal to other nodes
     }
     messenger->joinReceiver();

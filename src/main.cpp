@@ -1,13 +1,16 @@
 #include "main.h"
 
 int main(int argc, char *argv[]) {
-    std::string configPath = "peers.config";
-
     try {
-        if (argc < 2) {
+        if (argc < 3) {
+            LoggerSingleton::getInstance()->log(NORMAL, "Not enough params. USAGE: DistributedMonitor <configFile> <nodeIdentity>");
             return -1;
         }
-        std::string identity = argv[1];
+        if (argc >= 4 && std::string(argv[3]) == "DEBUG") {
+            LoggerSingleton::getInstance()->setLogLevel(DEBUG);
+        }
+        std::string configPath = argv[1];
+        std::string identity = argv[2];
         monitorDemo(configPath, identity);
     } catch (const std::exception &ex) {
         LoggerSingleton::getInstance()->log(DEBUG, ex.what());

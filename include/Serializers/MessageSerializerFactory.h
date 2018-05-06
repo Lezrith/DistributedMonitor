@@ -14,6 +14,7 @@
 #include "Serializers/WaitMessageSerializer.h"
 #include "Serializers/SignalMessageSerializer.h"
 #include "Serializers/StateMessageSerializer.h"
+#include "Serializers/PoisonMessageSerializer.h"
 #include "Messages/Message.h"
 #include "MessageSerializer.h"
 

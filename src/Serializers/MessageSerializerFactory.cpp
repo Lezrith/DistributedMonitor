@@ -21,6 +21,7 @@ std::unique_ptr<MessageSerializer> MessageSerializerFactory::createSerializer(Me
         case STATE:
             return std::make_unique<StateMessageSerializer>();
         case POISON:
+            return std::make_unique<PoisonMessageSerializer>();
         case REPLY:
         default:
             throw std::logic_error("Unknown message type" + type);

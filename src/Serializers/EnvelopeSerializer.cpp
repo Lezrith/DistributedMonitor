@@ -27,7 +27,7 @@ std::unique_ptr<Message> EnvelopeSerializer::deserialize(const std::string &stri
     std::unique_ptr<MessageSerializer> serializer = factory.createSerializer(payloadType);
 
     std::string payload;
-    iss >> payload;
+    getline(iss, payload);
     std::unique_ptr<Message> message = serializer->deserialize(payload);
     return std::make_unique<Envelope>(message);
 }

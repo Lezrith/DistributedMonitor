@@ -97,8 +97,13 @@ void Messenger::receiverLoop() {
     bool shouldStop = false;
     while (!shouldStop) {
         auto envelope = this->receive();
-        shouldStop = envelope->getPayloadType() == MessageType::POISON;
-        LoggerSingleton::getInstance()->log("Ready for incoming message");
+        if (envelope->getPayloadType() == MessageType::POISON) {
+            shouldStop = true;
+            auto poisonMessage = dynamic_cast<const PoisonMessage *>(envelope->getPayload());
+            LoggerSingleton::getInstance()->log("Receiver will shutdown because " + poisonMessage->getReason());
+        } else {
+            LoggerSingleton::getInstance()->log("Ready for incoming message");
+        }
     }
 }
 
@@ -177,4 +182,10 @@ void Messenger::sendBroadcastWithACK(const Envelope &envelope, sole::uuid reques
         cv.wait(lock);
     }
     this->onReceive.unsubscribe(callbackHandler);
+}
+
+void Messenger::shutdown() {
+    auto reason = this->identity + " requested shutdown";
+    std::unique_ptr<Message> poisonMessage = std::make_unique<PoisonMessage>(reason);
+    this->sendBroadcast(Envelope(poisonMessage));
 }

@@ -14,6 +14,7 @@
 #include "Utils/CallbackRepository.h"
 #include "Messages/Message.h"
 #include "Messages/AcknowledgeMessage.h"
+#include "Messages/PoisonMessage.h"
 #include "Serializers/MessageSerializerFactory.h"
 #include "SafeSocket.h"
 #include "Logger.h"
@@ -46,6 +47,8 @@ public:
 
     CallbackRepository<MessageType, Envelope> onReceive;
     CallbackRepository<MessageType, Envelope> onSent;
+
+    void shutdown();
 
 private:
     std::thread *receiverThread = nullptr;

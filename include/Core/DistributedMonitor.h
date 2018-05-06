@@ -4,12 +4,15 @@
 
 #include <memory>
 #include <type_traits>
+#include <functional>
 #include "Messages/StateMessage.h"
 #include "Utils/Sole/sole.h"
 #include "DistributedConditionalVariable.h"
 #include "DistributedMutex.h"
 #include "Serializers/Serializer.h"
 #include "Messenger.h"
+
+using namespace std::placeholders;
 
 template<typename State, typename StateSerializer>
 class DistributedMonitor {
@@ -19,9 +22,9 @@ public:
     DistributedMonitor(std::shared_ptr<Messenger> messenger, sole::uuid monitorUUID) : messenger(messenger), UUID(monitorUUID),
                                                                                        state(std::make_shared<State>()),
                                                                                        onStateReceivedHandle(messenger->onReceive.subscribe(MessageType::STATE,
-                                                                                                                                            [=](const Envelope &envelope) {
-                                                                                                                                                this->onStateReceived(envelope);
-                                                                                                                                            })) {
+                                                                                                                                            std::bind(
+                                                                                                                                                    &DistributedMonitor::onStateReceived,
+                                                                                                                                                    this, _1))) {
         sole::uuid mutexUUID(monitorUUID);
         mutexUUID.ab++;
         sole::uuid cvUUID(monitorUUID);
@@ -72,6 +75,18 @@ public:
             return monitor->state;
         };
 
+        void wait() {
+            monitor->distributedConditionalVariable->wait();
+        }
+
+        void signal() {
+            monitor->distributedConditionalVariable->signal();
+        }
+
+        void signalAll() {
+            monitor->distributedConditionalVariable->signalAll();
+        }
+
     private:
         DistributedMonitor *monitor;
     };
@@ -80,20 +95,8 @@ public:
         return MonitorHelper(this);
     }
 
-    MonitorHelper lock() {
+    MonitorHelper manuallyLock() {
         return MonitorHelper(this);
-    }
-
-    void wait() {
-        this->distributedConditionalVariable->wait();
-    }
-
-    void signal() {
-        this->distributedConditionalVariable->signal();
-    }
-
-    void signalAll() {
-        this->distributedConditionalVariable->signalAll();
     }
 
 private:

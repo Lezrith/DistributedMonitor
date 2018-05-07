@@ -60,13 +60,13 @@ public:
     }
 
 
-    struct MonitorHelper {
+    struct LockedMonitor {
     public:
-        explicit MonitorHelper(DistributedMonitor *monitor) : monitor(monitor) {
+        explicit LockedMonitor(DistributedMonitor *monitor) : monitor(monitor) {
             monitor->distributedMutex->lock();
         }
 
-        virtual ~MonitorHelper() {
+        virtual ~LockedMonitor() {
             monitor->sendState();
             monitor->distributedMutex->unlock();
         }
@@ -91,12 +91,12 @@ public:
         DistributedMonitor *monitor;
     };
 
-    MonitorHelper operator->() {
-        return MonitorHelper(this);
+    LockedMonitor operator->() {
+        return LockedMonitor(this);
     }
 
-    MonitorHelper manuallyLock() {
-        return MonitorHelper(this);
+    LockedMonitor manuallyLock() {
+        return LockedMonitor(this);
     }
 
 private:

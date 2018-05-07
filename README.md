@@ -120,9 +120,15 @@ distributedMutex.unlock();
 
 Mutual exclusion is achived using the Suzuki-Kasami algorithm. Explanation would be a bit longish so please check the original paper or the wikipedia.
 
-Internaly `ConditionalVariable` class stores queue of nodes waiting on this variable. When `wait()` is called node sends a blocking broadcast to notify peers it is waiting. When all other nodes respond with acknowledge underlying mutex will be unlocked and node will suspend. When `signal()` or `signalAll()` is used all other nodes are notified about which nodes will wake up and will pop them of the local queue. Calling node waits for acknowlegment from other nodes and will proceed to wake up either first or all waiting nodes.
+Internaly `ConditionalVariable` class stores queue of nodes waiting on this variable. When `wait()` is called node sends a blocking broadcast to notify peers it is waiting. When all other nodes respond with acknowledge underlying mutex will be unlocked and node will suspend. When `signal()` or `signalAll()` is used all other nodes are notified about which nodes will wake up so they can pop them of thir local queue. Calling node waits for acknowlegment from other nodes and will proceed to wake up either first or all nodes waiting in queue.
 
-Every access to the protected state requires acquiring lock on a distributed mutex associated with the monitor thus preventing simultaneous access to the state. After every access to the protected state or if `LockedMonitor` object goes out of scope changes will be send to all peers. Mutex will not be released until peers confirm new state was received and updated.
+Every access to the protected state requires acquiring lock on a distributed mutex associated with the monitor thus preventing simultaneous access to the state. After every access to the state or if `LockedMonitor` object goes out of scope changes will be send to all peers. Mutex will not be released until peers confirm new state was received and updated localy.
+
+### Problems
+
+Suzuki-Kasami algorithm (in it's basic version) does not require sychronous sending (with confirmation) and has comunication complexity of N for locking and 1 for unlocking. Conditional variable and monitor built on top of that require synchronous sends to update wait queue and state. This bring communication complexity down to 2N whenever CV or monitor is involved. This could be improved by sending everything in one token but was not implemented due to technical difficulties.
+
+This project assumes that 1-1 messaging channels are FIFO. Otherwise it could be possible for node to access critical section before it is notified about peer waiting on CV.
 
 ## Mentions
 

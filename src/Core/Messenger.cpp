@@ -32,6 +32,7 @@ Messenger::~Messenger() {
     for (auto &&socket : this->outSockets) {
         delete socket.second;
     }
+    delete this->receiverThread;
 }
 
 bool Messenger::send(const std::string &name, const std::string &string) {
